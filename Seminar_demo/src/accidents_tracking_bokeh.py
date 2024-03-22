@@ -49,7 +49,7 @@ def update_plot(latitude, longitude, severity, time, source):
                    'time': [time]
                    })
 
-def track_iss(interval=2):
+def track_iss(interval=5):
     
     # US coordinates range
     #(6340332.343706039, -13915064.36657361)
