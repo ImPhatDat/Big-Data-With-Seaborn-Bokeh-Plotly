@@ -46,10 +46,10 @@ def update_plot(latitude, longitude, severity, time, source):
     source.stream({'latitude': [latitude], 
                    'longitude': [longitude],
                    'severity': [severity],
-                   'time': [time]
+                   'time': [time.strftime("%d/%m/%Y")]
                    })
 
-def track_iss(interval=5):
+def track_iss(interval=3):
     
     # US coordinates range
     #(6340332.343706039, -13915064.36657361)
