@@ -5,7 +5,6 @@
 **/*.Identifier
 **/*.class
 **/*.jar
-**/*.ipynb_checkpoints
-**/*checkpoint
-**/*output
+**/*checkpoint*
+**/*output*
 .scalafmt.conf
