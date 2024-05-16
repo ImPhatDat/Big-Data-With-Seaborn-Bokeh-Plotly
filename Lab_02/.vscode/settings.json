@@ -1,6 +1,0 @@
-{
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "/usr/local/hadoop-3.3.6/share/hadoop/client/hadoop-client-api-3.3.6.jar"
-    ]
-}
