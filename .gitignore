@@ -6,5 +6,6 @@
 **/*.class
 **/*.jar
 **/*checkpoint*
+**/*sample*
 **/*output*
 .scalafmt.conf
