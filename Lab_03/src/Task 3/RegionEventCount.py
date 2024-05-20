@@ -5,7 +5,7 @@ import pyspark.sql.functions as f
 import argparse
 import os
 
-step_files = 1
+step_files = 100
 goldman = [
     [-74.0141012, 40.7152191],
     [-74.013777, 40.7152275],
@@ -77,15 +77,15 @@ full_schema = StructType(
 def in_polygon(x, y, polygon):
     num_vertices = len(polygon)
     inside = False
-    
+
     # first point
     p1 = polygon[0]
-    
+
     # For each edge
     for i in range(1, num_vertices + 1):
         # Next point
         p2 = polygon[i % num_vertices]
-        
+
         # if is above the minimum latitude (y)
         if y > min(p1[1], p2[1]):
             # if is below the maximum latitude (y)
@@ -93,12 +93,14 @@ def in_polygon(x, y, polygon):
                 # if is to the left of the maximum longitude (x)
                 if x <= max(p1[0], p2[0]):
                     # get intersection between horizontal line and the edge
-                    x_intersection = (y - p1[1]) * (p2[0] - p1[0]) / (p2[1] - p1[1]) + p1[0]
+                    x_intersection = (y - p1[1]) * (p2[0] - p1[0]) / (
+                        p2[1] - p1[1]
+                    ) + p1[0]
                     # if the point is on the same line as the edge or to the left of the x-intersection
                     if p1[0] == p2[0] or x <= x_intersection:
                         # modify flag
                         inside = not inside
-                        
+
         # Store the current point as the first point for the next iteration
         p1 = p2
     # Return final value of the flag
@@ -141,7 +143,7 @@ def main(input_path, checkpoint_path, output_path):
     # Creating a SparkSession in Python
     spark = SparkSession.builder.master("local").appName("Spark EX3").getOrCreate()
 
-    # Configures the number of partitions to use when shuffling data for joins or aggregations.
+    # Keep the size of shuffles small
     spark.conf.set("spark.sql.shuffle.partitions", "10")
 
     # Stream for reading
@@ -178,9 +180,11 @@ def main(input_path, checkpoint_path, output_path):
         "headquarter", f.when(f.col("goldman") == 1, "goldman").otherwise("citigroup")
     )
 
+    processed_df = processed_df.withColumn(
+        "dropoff", f.expr("cast(Dropoff_datetime as timestamp)")
+    )
     by_dropoff = processed_df.groupBy(
-        f.window(f.col("Dropoff_datetime"), "1 hour"), 
-        "headquarter"
+        "headquarter", f.window(f.col("dropoff"), "1 hour")
     ).count()
 
     query = (

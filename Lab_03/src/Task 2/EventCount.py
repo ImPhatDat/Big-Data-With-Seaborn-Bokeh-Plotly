@@ -5,7 +5,7 @@ import pyspark.sql.functions as f
 import argparse
 import os
 
-step_files = 1
+step_files = 100
 yellow_schema = StructType(
     [
         StructField("Type", StringType(), nullable=False),
@@ -75,10 +75,8 @@ def foreach_batch_function(output_path):
                 sub_df = tmp_df.where(f.col("startHour") == f.lit(h_num))
                 output_dir = f"output-{(h_num + 1) * 60 * 60 * 1000}"
 
-                # sub_df = sub_df.withColumn(
-                #     "print", f.concat(f.lit("count:"), f.col("count"))
-                # )
-                sub_df.select("count").write.mode("overwrite").csv(
+                sub_df.withColumn(
+                    "print", f.concat(f.col("count"))).select("print").write.mode("overwrite").text(
                     os.path.join(output_path, output_dir)
                 )
 
@@ -89,7 +87,7 @@ def main(input_path, checkpoint_path, output_path):
     # Creating a SparkSession in Python
     spark = SparkSession.builder.master("local").appName("Spark EX2").getOrCreate()
 
-    # Configures the number of partitions to use when shuffling data for joins or aggregations.
+    # Keep the size of shuffles small
     spark.conf.set("spark.sql.shuffle.partitions", "10")
 
     # Stream for reading
@@ -112,8 +110,11 @@ def main(input_path, checkpoint_path, output_path):
     )
 
     unified_df = yellow_df.unionByName(green_df, allowMissingColumns=True)
-
-    by_dropoff = unified_df.groupBy(f.window(f.col("Dropoff_datetime"), "1 hour")).count()
+    
+    unified_df = unified_df.withColumn(
+        "dropoff", f.expr("cast(Dropoff_datetime as timestamp)")
+    )
+    by_dropoff = unified_df.groupBy(f.window(f.col("dropoff"), "1 hour")).count()
 
     query = (
         by_dropoff.writeStream.outputMode("update")
